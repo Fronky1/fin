@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Поиск{% endblock %}
+{% block content %}
+<h1>Результаты поиска</h1>
+{% if query or ingredient %}
+    <p>По запросу «{{ query or '' }}» {% if ingredient %}и ингредиенту «{{ ingredient }}»{% endif %} найдено {{ recipes|length }} рецептов</p>
+{% endif %}
+
+<div class="row">
+    {% for recipe in recipes %}
+        <!-- такой же блок карточки, как на главной -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                {% if recipe.image %}
+                    <img src="/static/{{ recipe.image }}" class="card-img-top recipe-img" alt="">
+                {% endif %}
+                <div class="card-body">
+                    <h5><a href="{{ url_for('recipe_detail', recipe_id=recipe.id) }}">{{ recipe.title }}</a></h5>
+                    <p class="text-muted">от {{ recipe.author.username }}</p>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <p>Ничего не найдено</p>
+    {% endfor %}
+</div>
+{% endblock %}

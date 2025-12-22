@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}{{ recipe.title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <h1>{{ recipe.title }}</h1>
+        <p class="text-muted">Автор: {{ recipe.author.username }} • {{ recipe.created_at.strftime('%d.%m.%Y') }}</p>
+
+        {% if recipe.image %}
+            <img src="/static/{{ recipe.image }}" class="img-fluid rounded mb-4" alt="{{ recipe.title }}">
+        {% endif %}
+
+        {% if recipe.description %}
+            <p class="lead">{{ recipe.description }}</p>
+        {% endif %}
+
+        <h3>Ингредиенты</h3>
+        <ul class="list-group mb-4">
+            {% for ing in recipe.ingredients %}
+                <li class="list-group-item">{{ ing.amount }} {{ ing.name }}</li>
+            {% endfor %}
+        </ul>
+
+        <h3>Пошаговое приготовление</h3>
+        <ol class="list-group list-group-numbered mb-5">
+            {% for step in recipe.steps|sort(attribute='number') %}
+                <li class="list-group-item">{{ step.description }}</li>
+            {% endfor %}
+        </ol>
+
+        <!-- Оценка -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5>Средняя оценка: <strong>{{ recipe.average_rating }} ★</strong> ({{ recipe.ratings|length }} голосов)</h5>
+                {% if current_user.is_authenticated %}
+                    <form method="POST" action="{{ url_for('rate_recipe', recipe_id=recipe.id) }}" class="d-inline">
+                        {{ rating_form.hidden_tag() }}
+                        <div class="input-group w-auto d-inline-flex">
+                            {{ rating_form.value(class="form-select w-auto") }}
+                            {{ rating_form.submit(class="btn btn-warning") }}
+                        </div>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Комментарии -->
+        <h4>Комментарии ({{ recipe.comments|length }})</h4>
+        {% if current_user.is_authenticated %}
+            <form method="POST" action="{{ url_for('add_comment', recipe_id=recipe.id) }}" class="mb-4">
+                {{ comment_form.hidden_tag() }}
+                {{ comment_form.text(class="form-control", rows=3, placeholder="Напишите комментарий...") }}
+                <button class="btn btn-success mt-2">Отправить</button>
+            </form>
+        {% else %}
+            <p><a href="{{ url_for('login') }}">Войдите</a>, чтобы оставить комментарий.</p>
+        {% endif %}
+
+        {% for c in recipe.comments|sort(attribute='created_at', reverse=True) %}
+            <div class="border rounded p-3 mb-2">
+                <strong>{{ c.author.username }}</strong> <small class="text-muted">{{ c.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                <p class="mb-0">{{ c.text|nl2br|safe }}</p>
+            </div>
+        {% else %}
+            <p>Пока нет комментариев. Будьте первым!</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

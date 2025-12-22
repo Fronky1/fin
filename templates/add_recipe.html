@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Добавить рецепт{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Добавить новый рецепт</h1>
+
+<form method="POST" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+
+    <div class="mb-3">
+        {{ form.title.label(class="form-label") }}
+        {{ form.title(class="form-control", placeholder="Например: Борщ классический") }}
+    </div>
+
+    <div class="mb-3">
+        {{ form.description.label(class="form-label") }}
+        {{ form.description(class="form-control", rows=4) }}
+    </div>
+
+    <div class="mb-3">
+        {{ form.image.label(class="form-label") }}
+        {{ form.image(class="form-control") }}
+        <small class="form-text text-muted">JPG, PNG до 5 МБ</small>
+    </div>
+
+    <h4 class="mt-5">Ингредиенты</h4>
+    <div id="ingredients">
+       {% for ingredient_entry in form.ingredients %}
+    {{ ingredient_entry.form.name(
+        class="form-control",
+        placeholder="Название ингредиента"
+    ) }}
+    {{ ingredient_entry.form.amount(
+        class="form-control",
+        placeholder="Количество"
+    ) }}
+{% endfor %}
+
+    </div>
+    <button type="button" class="btn btn-outline-secondary btn-sm mb-4" id="add-ingredient">
+        + Добавить ингредиент
+    </button>
+
+    <h4 class="mt-4">Пошаговое приготовление</h4>
+    <div id="steps">
+        {% for step_entry in form.steps %}
+    {{ step_entry.form.description(class="form-control") }}
+{% endfor %}
+
+    </div>
+    <button type="button" class="btn btn-outline-secondary btn-sm mb-4" id="add-step">
+        + Добавить шаг
+    </button>
+
+    <hr>
+    {{ form.submit(class="btn btn-success btn-lg") }}
+</form>
+
+<script>
+    // Добавление ингредиента
+    document.getElementById('add-ingredient').addEventListener('click', function() {
+        const container = document.getElementById('ingredients');
+        const count = container.querySelectorAll('.ingredient-row').length;
+        const html = `
+            <div class="row g-3 mb-2 ingredient-row">
+                <div class="col-md-6">
+                    <input type="text" name="ingredients-${count}-name" class="form-control" placeholder="Название ингредиента" required>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" name="ingredients-${count}-amount" class="form-control" placeholder="Количество" required>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-field">−</button>
+                </div>
+            </div>`;
+        container.insertAdjacentHTML('beforeend', html);
+    });
+
+    // Добавление шага
+    document.getElementById('add-step').addEventListener('click', function() {
+        const container = document.getElementById('steps');
+        const count = container.querySelectorAll('.step-row').length;
+        const html = `
+            <div class="mb-3 step-row">
+                <textarea name="steps-${count}-description" class="form-control" rows="3" placeholder="Опишите этот шаг подробно..." required></textarea>
+                <button type="button" class="btn btn-outline-danger btn-sm mt-1 remove-field">− Удалить шаг</button>
+            </div>`;
+        container.insertAdjacentHTML('beforeend', html);
+    });
+
+    // Удаление полей
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-field')) {
+            e.target.closest('.ingredient-row, .step-row').remove();
+        }
+    });
+</script>
+{% endblock %}
