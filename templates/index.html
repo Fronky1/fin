@@ -1,64 +1,46 @@
-{% extends "base.html" %}
-{% block title %}Главная{% endblock %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Поварёшка</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        <h1>Поварёшка — Каталог рецептов</h1>
+        <nav>
+            <a href="/login">Войти</a> | <a href="/register">Регистрация</a>
+        </nav>
+    </header>
 
-{% block content %}
-<h1 class="mb-4">Последние рецепты</h1>
+    <main>
+        <h2>Все рецепты</h2>
+        <div id="recipes-container" class="grid"></div>
+    </main>
 
-<div class="row">
-    {% for item in recipes.items %}
-    <div class="col-md-4 mb-4">
-        <div class="card h-100">
-            {% if item.recipe.image %}
-                <img src="/static/{{ item.recipe.image }}" class="card-img-top recipe-img" alt="{{ item.recipe.title }}">
-            {% endif %}
-            <div class="card-body">
-                <h5 class="card-title"><a href="{{ url_for('recipe_detail', recipe_id=item.recipe.id) }}">{{ item.recipe.title }}</a></h5>
-                <p class="text-muted">от {{ item.recipe.author.username }} • {{ item.recipe.created_at.strftime('%d.%m.%Y') }}</p>
-                <p class="card-text">{{ item.recipe.description[:100] }}{% if item.recipe.description|length > 100 %}...{% endif %}</p>
-                <div>
-                    <span class="star">Средняя оценка: {{ item.recipe.average_rating }} ★</span>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% else %}
-    <p>Пока нет ни одного рецепта. Будь первым!</p>
-    {% endfor %}
-</div>
-
-<!-- Пагинация -->
-{% if recipes.pages > 1 %}
-<nav>
-    <ul class="pagination justify-content-center">
-        {% if recipes.has_prev %}
-            <li class="page-item"><a class="page-link" href="{{ url_for('index', page=recipes.prev_num) }}">Предыдущая</a></li>
-        {% endif %}
-        {% for p in recipes.iter_pages() %}
-            {% if p %}
-                <li class="page-item {% if p == recipes.page %}active{% endif %}">
-                    <a class="page-link" href="{{ url_for('index', page=p) }}">{{ p }}</a>
-                </li>
-            {% else %}
-                <li class="page-item disabled"><span class="page-link">...</span></li>
-            {% endif %}
-        {% endfor %}
-        {% if recipes.has_next %}
-            <li class="page-item"><a class="page-link" href="{{ url_for('index', page=recipes.next_num) }}">Следующая</a></li>
-        {% endif %}
-    </ul>
-</nav>
-{% endif %}
-
-<hr>
-<form class="row g-3" action="{{ url_for('search') }}">
-    <div class="col-auto">
-        <input type="text" name="q" class="form-control" placeholder="Поиск по названию">
-    </div>
-    <div class="col-auto">
-        <input type="text" name="ing" class="form-control" placeholder="Поиск по ингредиенту">
-    </div>
-    <div class="col-auto">
-        <button class="btn btn-outline-primary">Найти</button>
-    </div>
-</form>
-{% endblock %}
+    <script>
+        async function loadRecipes() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/recipes/');
+                const recipes = await response.json();
+                const container = document.getElementById('recipes-container');
+                container.innerHTML = '';
+                recipes.forEach(recipe => {
+                    container.innerHTML += `
+                        <div class="card">
+                            <img src="${recipe.photo_url || '/static/no-image.jpg'}" alt="${recipe.title}">
+                            <h3><a href="/recipe/${recipe.id}">${recipe.title}</a></h3>
+                            <p>${recipe.description || ''}</p>
+                            <p>Рейтинг: ${recipe.average_rating || 'Нет оценок'}</p>
+                        </div>
+                    `;
+                });
+            } catch (err) {
+                container.innerHTML = '<p>Ошибка загрузки рецептов</p>';
+            }
+        }
+        loadRecipes();
+    </script>
+</body>
+</html>
