@@ -1,13 +1,71 @@
-<!-- login.html -->
-{% extends "base.html" %}
-{% block title %}Вход{% endblock %}
-{% block content %}
-<h1 class="mb-4">Вход</h1>
-<form method="POST">
-    {{ form.hidden_tag() }}
-    <div class="mb-3">{{ form.username.label }} {{ form.username(class="form-control") }}</div>
-    <div class="mb-3">{{ form.password.label }} {{ form.password(class="form-control") }}</div>
-    {{ form.submit(class="btn btn-primary") }}
-</form>
-<p class="mt-3">Нет аккаунта? <a href="{{ url_for('register') }}">Зарегистрируйтесь</a></p>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход — Поварёшка</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        <h1>Поварёшка</h1>
+        <nav>
+            <a href="/">Главная</a> | <a href="/register">Регистрация</a>
+        </nav>
+    </header>
+
+    <main>
+        <h2>Вход</h2>
+        <form id="login-form">
+            <label>
+                Имя пользователя:
+                <input type="text" id="username" required>
+            </label>
+            <label>
+                Пароль:
+                <input type="password" id="password" required>
+            </label>
+            <button type="submit">Войти</button>
+        </form>
+        <p id="message"></p>
+    </main>
+
+    <script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const message = document.getElementById('message');
+
+        try {
+            const response = await fetch('http://127.0.0.1:8000/users/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    'username': username,
+                    'password': password
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                localStorage.setItem('token', data.access_token);
+                localStorage.setItem('username', username);
+                message.textContent = 'Вход успешен! Перенаправление на главную...';
+                message.style.color = 'green';
+                setTimeout(() => window.location.href = '/', 1500);
+            } else {
+                message.textContent = data.detail || 'Неверный логин или пароль';
+                message.style.color = 'red';
+            }
+        } catch (err) {
+            message.textContent = 'Ошибка сети. Проверьте, запущен ли сервер.';
+            message.style.color = 'red';
+        }
+    });
+</script>
+</body>
+</html>

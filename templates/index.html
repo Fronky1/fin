@@ -10,7 +10,12 @@
     <header>
         <h1>Поварёшка — Каталог рецептов</h1>
         <nav>
-            <a href="/login">Войти</a> | <a href="/register">Регистрация</a>
+            <a href="/">Главная</a>
+            <a href="/add-recipe" id="add-recipe-link" style="display:none;">Добавить рецепт</a>
+            <span id="user-info"></span>
+            <a href="/login" id="login-link">Войти</a>
+            <a href="/register" id="register-link">Регистрация</a>
+            <button id="logout-btn" style="display:none;">Выйти</button>
         </nav>
     </header>
 
@@ -22,25 +27,57 @@
     <script>
         async function loadRecipes() {
             try {
-                const response = await fetch('http://127.0.0.1:8000/recipes/');
+                const response = await fetch('/recipes');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const recipes = await response.json();
+
                 const container = document.getElementById('recipes-container');
                 container.innerHTML = '';
+
+                if (recipes.length === 0) {
+                    container.innerHTML = '<p>Рецептов пока нет. Добавьте первый!</p>';
+                    return;
+                }
+
                 recipes.forEach(recipe => {
-                    container.innerHTML += `
-                        <div class="card">
-                            <img src="${recipe.photo_url || '/static/no-image.jpg'}" alt="${recipe.title}">
-                            <h3><a href="/recipe/${recipe.id}">${recipe.title}</a></h3>
-                            <p>${recipe.description || ''}</p>
-                            <p>Рейтинг: ${recipe.average_rating || 'Нет оценок'}</p>
-                        </div>
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                        <img src="${recipe.photo_url || '/static/no-image.jpg'}" alt="${recipe.title}" style="width:100%; height:200px; object-fit:cover; border-radius:8px;">
+                        <h3><a href="/recipe/${recipe.id}">${recipe.title}</a></h3>
+                        <p>${recipe.description || 'Без описания'}</p>
+                        <p>Рейтинг: ${recipe.average_rating ? recipe.average_rating + ' ★' : 'Нет оценок'}</p>
+                        <p>Автор: ID ${recipe.author_id}</p>
                     `;
+                    container.appendChild(card);
                 });
             } catch (err) {
-                container.innerHTML = '<p>Ошибка загрузки рецептов</p>';
+                console.error('Ошибка:', err);
+                document.getElementById('recipes-container').innerHTML = '<p>Ошибка загрузки. Проверьте консоль.</p>';
             }
         }
+
         loadRecipes();
+    </script>
+
+    <script>
+        // Авторизация и показ кнопки "Добавить рецепт"
+        const token = localStorage.getItem('token');
+        const username = localStorage.getItem('username');
+
+        if (token && username) {
+            document.getElementById('user-info').textContent = `Привет, ${username}!`;
+            document.getElementById('login-link').style.display = 'none';
+            document.getElementById('register-link').style.display = 'none';
+            document.getElementById('add-recipe-link').style.display = 'inline';
+            document.getElementById('logout-btn').style.display = 'inline';
+        }
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            window.location.reload();
+        });
     </script>
 </body>
 </html>
