@@ -12,4 +12,4 @@ python-multipart
 passlib[argon2]
 passlib
 jinja2
-python-multipart
+python-dotenv
