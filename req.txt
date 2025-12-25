@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+psycopg2-binary
+bcrypt
+pyjwt
+alembic
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+passlib[argon2]
+passlib
+jinja2
+python-multipart
