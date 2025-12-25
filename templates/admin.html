@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Админ-панель — Поварёшка</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        <h1>Админ-панель</h1>
+        <nav>
+            <a href="/">Главная</a>
+            <button onclick="localStorage.clear(); location.href='/login'">Выйти</button>
+        </nav>
+    </header>
+
+    <main>
+        <h2>Все рецепты</h2>
+        <div id="recipes"></div>
+    </main>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) location.href = '/login';
+
+        async function loadAdminRecipes() {
+            const response = await fetch('http://127.0.0.1:8000/admin/recipes', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const recipes = await response.json();
+            const container = document.getElementById('recipes');
+            recipes.forEach(recipe => {
+                container.innerHTML += `
+                    <div>
+                        <h3>${recipe.title}</h3>
+                        <img src="${recipe.photo_url}" width="200">
+                        <button onclick="deleteRecipe(${recipe.id})">Удалить</button>
+                    </div>
+                `;
+            });
+        }
+
+        async function deleteRecipe(id) {
+            if (confirm('Удалить рецепт?')) {
+                await fetch(`http://127.0.0.1:8000/admin/recipes/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                loadAdminRecipes();
+            }
+        }
+
+        loadAdminRecipes();
+    </script>
+</body>
+</html>

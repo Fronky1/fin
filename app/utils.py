@@ -1,4 +1,3 @@
-# app/utils.py
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
@@ -17,7 +16,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "super-secret-key-change-in-production-2025
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440
 
-# Используем argon2 вместо bcrypt — нет ограничения 72 байт
+#argon2
 pwd_context = CryptContext(schemes=["argon2", "bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="users/login")
 
@@ -50,3 +49,8 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     if user is None:
         raise credentials_exception
     return user
+
+def get_current_admin(current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещён. Требуется роль admin")
+    return current_user

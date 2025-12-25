@@ -23,7 +23,7 @@ def create_or_update_rating(
     if not 1 <= rating_in.score <= 5:
         raise HTTPException(status_code=400, detail="Рейтинг должен быть от 1 до 5")
 
-    # Ищем существующий рейтинг
+    # рейтинг
     existing = db.query(Rating).filter(
         Rating.recipe_id == rating_in.recipe_id,
         Rating.user_id == current_user.id

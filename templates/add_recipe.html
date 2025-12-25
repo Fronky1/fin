@@ -1,98 +1,102 @@
-{% extends "base.html" %}
-{% block title %}Добавить рецепт{% endblock %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Добавить рецепт — Поварёшка</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        <h1>Поварёшка</h1>
+        <nav>
+            <a href="/">Главная</a>
+            <span id="user-info"></span>
+            <button id="logout-btn" style="display:none;">Выйти</button>
+        </nav>
+    </header>
 
-{% block content %}
-<h1 class="mb-4">Добавить новый рецепт</h1>
+    <main>
+        <h2>Добавить новый рецепт</h2>
+        <form id="add-recipe-form" enctype="multipart/form-data">
+            <label>
+                Название:
+                <input type="text" id="title" required>
+            </label>
+            <label>
+                Описание:
+                <textarea id="description" rows="5"></textarea>
+            </label>
+            <label>
+                Фото рецепта (из файла):
+                <input type="file" id="photo" accept="image/*">
+            </label>
+            <p><small>Или вставьте URL фото:</small></p>
+            <label>
+                URL фото (опционально):
+                <input type="url" id="photo_url" placeholder="https://example.com/photo.jpg">
+            </label>
+            <button type="submit">Опубликовать рецепт</button>
+        </form>
+        <p id="message"></p>
+    </main>
 
-<form method="POST" enctype="multipart/form-data">
-    {{ form.hidden_tag() }}
+   <script>
+    // Проверка авторизации
+    const token = localStorage.getItem('token');
+    const username = localStorage.getItem('username');
 
-    <div class="mb-3">
-        {{ form.title.label(class="form-label") }}
-        {{ form.title(class="form-control", placeholder="Например: Борщ классический") }}
-    </div>
+    if (!token) {
+        document.body.innerHTML = '<h2>Необходимо войти в аккаунт</h2><a href="/login">Войти</a>';
+    } else {
+        document.getElementById('user-info').textContent = `Привет, ${username}!`;
+        document.getElementById('logout-btn').style.display = 'inline';
+    }
 
-    <div class="mb-3">
-        {{ form.description.label(class="form-label") }}
-        {{ form.description(class="form-control", rows=4) }}
-    </div>
-
-    <div class="mb-3">
-        {{ form.image.label(class="form-label") }}
-        {{ form.image(class="form-control") }}
-        <small class="form-text text-muted">JPG, PNG до 5 МБ</small>
-    </div>
-
-    <h4 class="mt-5">Ингредиенты</h4>
-    <div id="ingredients">
-       {% for ingredient_entry in form.ingredients %}
-    {{ ingredient_entry.form.name(
-        class="form-control",
-        placeholder="Название ингредиента"
-    ) }}
-    {{ ingredient_entry.form.amount(
-        class="form-control",
-        placeholder="Количество"
-    ) }}
-{% endfor %}
-
-    </div>
-    <button type="button" class="btn btn-outline-secondary btn-sm mb-4" id="add-ingredient">
-        + Добавить ингредиент
-    </button>
-
-    <h4 class="mt-4">Пошаговое приготовление</h4>
-    <div id="steps">
-        {% for step_entry in form.steps %}
-    {{ step_entry.form.description(class="form-control") }}
-{% endfor %}
-
-    </div>
-    <button type="button" class="btn btn-outline-secondary btn-sm mb-4" id="add-step">
-        + Добавить шаг
-    </button>
-
-    <hr>
-    {{ form.submit(class="btn btn-success btn-lg") }}
-</form>
-
-<script>
-    // Добавление ингредиента
-    document.getElementById('add-ingredient').addEventListener('click', function() {
-        const container = document.getElementById('ingredients');
-        const count = container.querySelectorAll('.ingredient-row').length;
-        const html = `
-            <div class="row g-3 mb-2 ingredient-row">
-                <div class="col-md-6">
-                    <input type="text" name="ingredients-${count}-name" class="form-control" placeholder="Название ингредиента" required>
-                </div>
-                <div class="col-md-4">
-                    <input type="text" name="ingredients-${count}-amount" class="form-control" placeholder="Количество" required>
-                </div>
-                <div class="col-md-2">
-                    <button type="button" class="btn btn-outline-danger btn-sm remove-field">−</button>
-                </div>
-            </div>`;
-        container.insertAdjacentHTML('beforeend', html);
+    document.getElementById('logout-btn').addEventListener('click', () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        window.location.href = '/';
     });
 
-    // Добавление шага
-    document.getElementById('add-step').addEventListener('click', function() {
-        const container = document.getElementById('steps');
-        const count = container.querySelectorAll('.step-row').length;
-        const html = `
-            <div class="mb-3 step-row">
-                <textarea name="steps-${count}-description" class="form-control" rows="3" placeholder="Опишите этот шаг подробно..." required></textarea>
-                <button type="button" class="btn btn-outline-danger btn-sm mt-1 remove-field">− Удалить шаг</button>
-            </div>`;
-        container.insertAdjacentHTML('beforeend', html);
-    });
+    // Отправка формы
+    document.getElementById('add-recipe-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const title = document.getElementById('title').value;
+        const description = document.getElementById('description').value;
+        const photo = document.getElementById('photo').files[0];
+        const message = document.getElementById('message');
 
-    // Удаление полей
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('remove-field')) {
-            e.target.closest('.ingredient-row, .step-row').remove();
+        const formData = new FormData();
+        formData.append('title', title);
+        if (description) formData.append('description', description);
+        if (photo) formData.append('photo', photo);
+
+        try {
+            const response = await fetch('/recipes/', {  // Относительный URL — решает все проблемы
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                message.textContent = 'Рецепт опубликован!';
+                message.style.color = 'green';
+                setTimeout(() => window.location.href = `/recipe/${data.id}`, 1500);
+            } else {
+                const data = await response.json();
+                message.textContent = data.detail || 'Ошибка публикации';
+                message.style.color = 'red';
+            }
+        } catch (err) {
+            console.error(err);
+            message.textContent = 'Ошибка сети. Проверьте консоль (F12).';
+            message.style.color = 'red';
         }
     });
 </script>
-{% endblock %}
+</body>
+</html>

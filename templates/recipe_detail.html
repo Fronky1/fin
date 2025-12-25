@@ -2,26 +2,98 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Рецепт #{{ recipe_id }}</title>
+    <title>Рецепт</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <a href="/">← На главную</a>
-    <div id="recipe"></div>
+    <header>
+        <h1>Поварёшка</h1>
+        <nav>
+            <a href="/">Главная</a>
+        </nav>
+    </header>
+
+    <main>
+        <div id="recipe-container"></div>
+
+        <h3>Рейтинг: <span id="average-rating"></span></h3>
+        <form id="rating-form" style="display:none;">
+            <label>Оцените рецепт (1-5): <input type="number" id="score" min="1" max="5" required></label>
+            <button type="submit">Отправить</button>
+        </form>
+
+        <h3>Комментарии</h3>
+        <div id="comments-container"></div>
+        <form id="comment-form" style="display:none;">
+            <textarea id="comment-text" required></textarea>
+            <button type="submit">Добавить комментарий</button>
+        </form>
+    </main>
 
     <script>
         const recipeId = {{ recipe_id }};
+        const token = localStorage.getItem('token');
+
+        if (token) {
+            document.getElementById('rating-form').style.display = 'block';
+            document.getElementById('comment-form').style.display = 'block';
+        }
 
         async function loadRecipe() {
-            const response = await fetch(`http://127.0.0.1:8000/recipes/${recipeId}`);
-            const recipe = await response.json();
-            document.getElementById('recipe').innerHTML = `
-                <h1>${recipe.title}</h1>
-                <img src="${recipe.photo_url || '/static/no-image.jpg'}" style="max-width: 600px;">
-                <p>${recipe.description}</p>
-                <p>Рейтинг: ${recipe.average_rating || 'Нет оценок'}</p>
-            `;
+            try {
+                const response = await fetch(`/recipes/${recipeId}`);
+                if (!response.ok) throw new Error('Рецепт не найден');
+                const recipe = await response.json();
+
+                document.getElementById('recipe-container').innerHTML = `
+                    <h2>${recipe.title}</h2>
+                    <img src="${recipe.photo_url}" style="max-width:600px;">
+                    <p>${recipe.description}</p>
+                `;
+
+                document.getElementById('average-rating').textContent = recipe.average_rating || 'Нет оценок';
+
+                // Загрузка комментариев
+                const commentsResponse = await fetch(`/comments/recipe/${recipeId}`);
+                const comments = await commentsResponse.json();
+                const commentsContainer = document.getElementById('comments-container');
+                commentsContainer.innerHTML = '';
+                comments.forEach(comment => {
+                    commentsContainer.innerHTML += `
+                        <div>
+                            <p>${comment.text}</p>
+                            <small>Автор: ID ${comment.user_id} | ${comment.created_at}</small>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error(error);
+                document.getElementById('recipe-container').innerHTML = '<p>Ошибка загрузки рецепта</p>';
+            }
         }
+
+        document.getElementById('comment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = document.getElementById('comment-text').value;
+            await fetch('/comments/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ text, recipe_id: recipeId })
+            });
+            loadRecipe();
+        });
+
+        document.getElementById('rating-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const score = document.getElementById('score').value;
+            await fetch('/ratings/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ score, recipe_id: recipeId })
+            });
+            loadRecipe();
+        });
+
         loadRecipe();
     </script>
 </body>

@@ -9,8 +9,8 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True, nullable=False)
-    password_hash = Column(String, nullable=False)  # <-- nullable=False, но мы передаём значение
-    role = Column(String, default="user")
+    password_hash = Column(String, nullable=False)
+    role = Column(String, default="user")  # "user" или "admin"
 
     recipes = relationship("Recipe", back_populates="author")
     comments = relationship("Comment", back_populates="author")
@@ -24,7 +24,7 @@ class Recipe(Base):
     description = Column(Text, nullable=True)
     photo_url = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
-    author_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # НЕ NULL — теперь обязательно
+    author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     author = relationship("User", back_populates="recipes")
     ingredients = relationship("RecipeIngredient", back_populates="recipe", cascade="all, delete-orphan")
@@ -37,15 +37,16 @@ class RecipeIngredient(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
-    quantity = Column(String, nullable=True)  # "200 г"
+    quantity = Column(String, nullable=True)
     recipe_id = Column(Integer, ForeignKey("recipes.id"), nullable=False)
 
     recipe = relationship("Recipe", back_populates="ingredients")
+
 class Ingredient(Base):
     __tablename__ = "ingredients"
+
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
-
 
 class Step(Base):
     __tablename__ = "steps"
